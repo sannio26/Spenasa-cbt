@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPENSA-CBT CLOUD | Portal Bank Soal, Data Siswa & Evaluasi SMP N 1 Mertoyudan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; color: black !important; font-size: 11pt; }
+      .print-container { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- HEADER RESMI SMP N 1 MERTOYUDAN -->
+  <header class="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-950 text-white shadow-lg border-b-4 border-amber-400 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center gap-3.5">
+        <img id="header-logo" alt="Logo SPENSA-CBT" class="w-12 h-12 rounded-full bg-white p-0.5 object-contain shadow-md border-2 border-amber-400" />
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-xl tracking-tight">SPENSA-CBT <span class="text-amber-400">CLOUD</span></h1>
+            <span id="badge-cloud-status" class="text-[10px] uppercase tracking-wider bg-slate-800 border border-slate-600 px-2.5 py-0.5 rounded-full text-slate-300 font-bold">Mode Lokal</span>
+          </div>
+          <p class="text-xs text-blue-200">Portal Projek Soal, CBT & Analisa Kemampuan Siswa — <b>SMP Negeri 1 Mertoyudan</b></p>
+        </div>
+      </div>
+
+      <div class="flex items-center bg-blue-950/80 p-1.5 rounded-xl border border-blue-800">
+        <button onclick="switchRole('guru')" id="btn-role-guru" class="px-5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-amber-400 text-blue-950 shadow transition">
+          👨‍🏫 Workspace Guru
+        </button>
+        <button onclick="switchRole('siswa')" id="btn-role-siswa" class="px-5 py-2 rounded-lg text-xs sm:text-sm font-bold text-blue-200 hover:text-white transition">
+          🎓 Ruang CBT Siswa
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== WORKSPACE GURU ==================== -->
+  <main id="view-guru" class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-5">
+
+    <!-- Panel Koneksi Cloud & Logo -->
+    <details class="bg-white rounded-2xl border border-slate-200 shadow-sm no-print">
+      <summary class="px-5 py-3.5 cursor-pointer font-bold text-xs sm:text-sm text-blue-950 flex justify-between items-center">
+        <span>⚙️ Pengaturan Database Gratis (Supabase), Gemini AI & Logo Sekolah</span>
+        <span class="text-xs text-blue-600 underline">Klik untuk buka/tutup</span>
+      </summary>
+      <div class="p-5 pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-600 mb-1">1. Gemini API Key (AI Kisi-Kisi)</label>
+          <input type="password" id="cfg-gemini" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-xl px-3 py-2" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-600 mb-1">2. Supabase Project URL</label>
+          <input type="text" id="cfg-sb-url" placeholder="https://xxxx.supabase.co" class="w-full border border-slate-300 rounded-xl px-3 py-2" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-600 mb-1">3. Supabase Anon Key</label>
+          <input type="password" id="cfg-sb-key" placeholder="eyJhbGciOiJIUzI1NiIs..." class="w-full border border-slate-300 rounded-xl px-3 py-2" />
+        </div>
+        <div class="flex flex-col justify-between">
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">4. Ganti Logo Sekolah (Opsional)</label>
+            <input type="file" accept="image/*" onchange="uploadLogoSekolah(event)" class="w-full text-[11px]" />
+          </div>
+          <button onclick="simpanPengaturanCloud()" class="mt-2 w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 rounded-xl">
+            💾 Simpan & Hubungkan Cloud
+          </button>
+        </div>
+      </div>
+    </details>
+
+    <!-- Bar Projek Aktif -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 no-print">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span class="text-xs font-extrabold uppercase text-blue-900 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">📁 Projek Aktif:</span>
+        <select id="select-projek" onchange="gantiProjekAktif(this.value)" class="border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 bg-slate-50"></select>
+        <button onclick="buatProjekBaru()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl">+ Projek Baru</button>
+      </div>
+      <div class="text-xs font-bold text-slate-500">
+        Kode Ujian Cloud: <span id="badge-kode-ujian" class="font-mono text-blue-900 bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300">-</span>
+      </div>
+    </div>
+
+    <!-- Navigasi 5 Tab Kerja Guru -->
+    <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-2 lg:grid-cols-5 gap-2 no-print">
+      <button onclick="switchGuruTab('kisi')" id="tab-kisi" class="px-3 py-3 rounded-xl text-xs font-bold bg-blue-900 text-white shadow-sm text-left flex items-center gap-2">
+        <span class="bg-amber-400 text-blue-950 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-extrabold shrink-0">1</span>
+        <span>Projek & Kisi-Kisi</span>
+      </button>
+      <button onclick="switchGuruTab('cbt')" id="tab-cbt" class="px-3 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 text-left flex items-center gap-2">
+        <span class="bg-slate-200 text-slate-700 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-extrabold shrink-0">2</span>
+        <span>Soal CBT (PG)</span>
+      </button>
+      <button onclick="switchGuruTab('siswa')" id="tab-siswa" class="px-3 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 text-left flex items-center gap-2">
+        <span class="bg-slate-200 text-slate-700 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-extrabold shrink-0">3</span>
+        <span>Master Data Siswa (<span id="count-master-siswa">0</span>)</span>
+      </button>
+      <button onclick="switchGuruTab('kirim')" id="tab-kirim" class="px-3 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 text-left flex items-center gap-2">
+        <span class="bg-slate-200 text-slate-700 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-extrabold shrink-0">4</span>
+        <span>Kirim Ujian</span>
+      </button>
+      <button onclick="switchGuruTab('analisa')" id="tab-analisa" class="px-3 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 text-left flex items-center gap-2">
+        <span class="bg-slate-200 text-slate-700 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-extrabold shrink-0">5</span>
+        <span>Analisa & Cetak</span>
+      </button>
+    </div>
+
+    <!-- ==================== TAB 1: PROJEK & KISI-KISI ==================== -->
+    <section id="guru-kisi" class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6 no-print">
+      <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-4">
+        <div>
+          <h2 class="text-lg font-extrabold text-blue-950">1. Identitas Projek & Import Kisi-Kisi PDF</h2>
+          <p class="text-xs text-slate-500">Isi identitas projek, unggah PDF kisi-kisi, lihat generalisasi materi, dan unduh contoh soal.</p>
+        </div>
+        <button onclick="muatDemoProjek()" class="text-xs bg-blue-50 text-blue-800 border border-blue-200 px-4 py-2 rounded-xl font-bold hover:bg-blue-100">
+          ⚡ Muat Contoh Projek PAI IX
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Nama Projek / Ujian</label>
+          <input type="text" id="meta-projek" oninput="simpanMetaProjek()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Mata Pelajaran</label>
+          <input type="text" id="meta-mapel" oninput="simpanMetaProjek()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Kelas</label>
+          <input type="text" id="meta-kelas" oninput="simpanMetaProjek()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Nama Guru Penyusun</label>
+          <input type="text" id="meta-guru" oninput="simpanMetaProjek()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Durasi Ujian (Menit)</label>
+          <input type="number" id="meta-waktu" min="5" max="240" oninput="simpanMetaProjek()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <label class="block text-xs font-extrabold text-blue-950 uppercase">Unggah File Kisi-Kisi (.PDF / .JPG / .PNG)</label>
+          <input type="file" id="file-kisi" accept=".pdf,image/*" onchange="handleFileKisi(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-900 file:text-white hover:file:bg-blue-800" />
+          <div id="preview-file-badge" class="hidden flex items-center justify-between bg-amber-50 border border-amber-300 px-3 py-2 rounded-xl text-xs">
+            <span id="nama-file-terpilih" class="font-bold text-amber-950 truncate"></span>
+            <button onclick="hapusFileTerpilih()" class="text-rose-600 font-bold ml-2 hover:underline">Hapus</button>
+          </div>
+          <button onclick="prosesGeneralisasiKisi()" id="btn-gen-kisi" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow">
+            🔍 Baca Kisi-Kisi & Buat Generalisasi + Contoh Soal
+          </button>
+          <p id="status-kisi" class="text-xs font-semibold text-slate-600"></p>
+        </div>
+
+        <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+              <span class="text-xs font-extrabold text-blue-950 uppercase">📋 Generalisasi Kisi-Kisi & Contoh Soal</span>
+              <div class="flex gap-2">
+                <button onclick="downloadContohWord()" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold px-3 py-1 rounded-lg">📥 Word</button>
+                <button onclick="cetakContohPDF()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-3 py-1 rounded-lg">🖨️ PDF</button>
+              </div>
+            </div>
+            <div id="hasil-generalisasi-box" class="bg-white p-3.5 rounded-xl border border-slate-200 text-xs max-h-64 overflow-y-auto">
+              <p class="text-slate-400 italic">Belum ada kisi-kisi yang diproses pada projek ini.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: SOAL CBT (PG) ==================== -->
+    <section id="guru-cbt" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 no-print">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+          <div>
+            <h2 class="text-lg font-extrabold text-blue-950">2. Pembuat Soal CBT (Khusus Pilihan Ganda)</h2>
+            <p class="text-xs text-slate-500">Tentukan jumlah soal PG, edit redaksi langsung di naskah jika diperlukan, lalu unduh Word/PDF.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1.5 text-xs font-bold">
+              <span>Jumlah:</span>
+              <input type="number" id="jumlah-soal-pg" value="10" min="1" max="60" class="w-16 border border-slate-300 rounded-lg px-2 py-1.5 text-center" />
+            </div>
+            <button onclick="generateSoalCBTPG()" id="btn-gen-cbt" class="bg-amber-400 hover:bg-amber-500 text-blue-950 font-extrabold px-4 py-2 rounded-xl text-xs shadow">
+              ✨ Generate Soal PG
+            </button>
+            <button onclick="tambahSoalPGManual()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs">
+              + Tambah Butir PG Manual
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button onclick="downloadNaskahWord(false)" class="text-xs bg-blue-900 hover:bg-blue-800 text-white font-bold px-3.5 py-2 rounded-xl">📘 Word (Soal)</button>
+          <button onclick="downloadNaskahWord(true)" class="text-xs bg-indigo-900 hover:bg-indigo-800 text-white font-bold px-3.5 py-2 rounded-xl">🔑 Word (+ Kunci)</button>
+          <button onclick="cetakNaskahPDF(false)" class="text-xs bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2 rounded-xl">🖨️ PDF Soal</button>
+          <button onclick="cetakNaskahPDF(true)" class="text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 rounded-xl">🖨️ PDF (+ Kunci)</button>
+          <span id="status-cbt" class="text-xs font-semibold text-blue-900 self-center ml-2"></span>
+        </div>
+      </div>
+
+      <!-- Lembar Naskah Soal & Kunci -->
+      <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 print-container space-y-6">
+        <div class="flex items-center gap-4 border-b-2 border-slate-800 pb-4">
+          <img id="kop-logo-img" alt="Logo Sekolah" class="w-16 h-16 object-contain shrink-0" />
+          <div class="flex-1 text-center">
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-600">PEMERINTAH KABUPATEN MAGELANG — DINAS PENDIDIKAN DAN KEBUDAYAAN</p>
+            <h3 class="text-lg font-extrabold uppercase text-slate-900">SMP NEGERI 1 MERTOYUDAN</h3>
+            <p class="text-xs text-slate-600">Jl. Mayjen Bambang Soegeng, Mertoyudan, Kab. Magelang, Jawa Tengah</p>
+            <h4 id="kop-nama-projek" class="mt-1 text-sm font-extrabold uppercase underline">ASESMEN SUMATIF</h4>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <div><b>Mata Pelajaran :</b> <span id="kop-mapel">-</span></div>
+          <div><b>Guru Pengampu :</b> <span id="kop-guru">-</span></div>
+          <div><b>Kelas :</b> <span id="kop-kelas">-</span></div>
+          <div><b>Alokasi Waktu :</b> <span id="kop-waktu">-</span> Menit</div>
+        </div>
+
+        <div id="list-soal-cbt" class="space-y-4 text-sm text-slate-500">Belum ada soal Pilihan Ganda.</div>
+
+        <div id="print-kunci-box" class="hidden page-break pt-4 border-t-2 border-slate-800">
+          <h4 class="font-extrabold text-sm uppercase mb-3">🔑 KUNCI JAWABAN — <span id="kop-kunci-projek"></span></h4>
+          <div id="grid-kunci-print" class="grid grid-cols-4 sm:grid-cols-5 gap-2 text-xs"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: MASTER DATA SISWA ==================== -->
+    <section id="guru-siswa" class="hidden bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6 no-print">
+      <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-4">
+        <div>
+          <h2 class="text-lg font-extrabold text-blue-950">3. Master Data Siswa SMP N 1 Mertoyudan</h2>
+          <p class="text-xs text-slate-500">Import daftar siswa dari Excel/CSV agar saat ujian siswa cukup memilih Nama & Kelas dari daftar resmi.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="downloadTemplateCSV()" class="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-3.5 py-2 rounded-xl font-bold hover:bg-emerald-100">📥 Download Format Excel (.CSV)</button>
+          <button onclick="muatContohSiswaSpensa()" class="text-xs bg-blue-50 text-blue-800 border border-blue-200 px-3.5 py-2 rounded-xl font-bold hover:bg-blue-100">⚡ Muat Contoh Data Siswa</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-extrabold text-blue-950">Import Massal (Copy-Paste dari Excel atau Upload CSV)</label>
+            <input type="file" accept=".csv,.txt" onchange="importFileCSVSiswa(event)" class="text-[11px] w-44" />
+          </div>
+          <p class="text-[11px] text-slate-500">Format 3 kolom: <b>NIS, Nama Lengkap, Kelas</b> (pisahkan dengan koma atau Tab dari Excel):</p>
+          <textarea id="input-bulk-siswa" rows="6" placeholder="10241, Adinda Putri Maharani, IX-A&#10;10242, Bagas Pratama, IX-A" class="w-full border border-slate-300 rounded-xl p-3 text-xs font-mono"></textarea>
+          <button onclick="prosesImportBulkSiswa()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 rounded-xl text-xs">
+            💾 Simpan ke Database Siswa
+          </button>
+        </div>
+
+        <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-extrabold text-blue-950">Daftar Siswa Terdaftar (<span id="total-siswa-terdaftar">0</span>)</h3>
+            <button onclick="hapusSemuaMasterSiswa()" class="text-xs text-rose-600 font-bold hover:underline">Kosongkan Data</button>
+          </div>
+          <div class="max-h-72 overflow-y-auto border border-slate-200 rounded-xl bg-white">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0">
+                <tr>
+                  <th class="p-2.5">NIS</th>
+                  <th class="p-2.5">Nama Lengkap</th>
+                  <th class="p-2.5">Kelas</th>
+                  <th class="p-2.5 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-master-siswa" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: KIRIM UJIAN ==================== -->
+    <section id="guru-kirim" class="hidden bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6 no-print">
+      <div class="border-b pb-4">
+        <h2 class="text-lg font-extrabold text-blue-950">4. Publikasikan & Kirim Ujian ke Siswa</h2>
+        <p class="text-xs text-slate-500">Publikasikan paket soal ke Cloud agar siswa dapat login memilih nama mereka dan mengerjakan ujian.</p>
+      </div>
+
+      <div class="bg-blue-50/70 border border-blue-200 rounded-2xl p-5 space-y-2 text-xs sm:text-sm">
+        <div><b>Projek:</b> <span id="info-kirim-projek">-</span> | <b>Mapel:</b> <span id="info-kirim-mapel">-</span> | <b>Kelas:</b> <span id="info-kirim-kelas">-</span> | <b>Guru:</b> <span id="info-kirim-guru">-</span></div>
+        <div class="font-bold text-blue-900">Jumlah Soal Siap Ujian: <span id="info-kirim-jumlah">0</span> Soal Pilihan Ganda</div>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <button onclick="publikasikanKeCloud()" id="btn-publish-cloud" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-5 py-3 rounded-xl text-xs sm:text-sm shadow">
+          ☁️ Publikasikan Ujian ke Cloud
+        </button>
+        <button onclick="salinKodeSingkat()" class="bg-amber-400 hover:bg-amber-500 text-blue-950 font-bold px-4 py-3 rounded-xl text-xs sm:text-sm">
+          📋 Salin Kode Ujian
+        </button>
+        <button onclick="salinLinkUjianCloud()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold px-4 py-3 rounded-xl text-xs sm:text-sm">
+          🌐 Salin Link Langsung Siswa
+        </button>
+      </div>
+
+      <div id="box-kode-terbit" class="hidden bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-5 space-y-2">
+        <div class="text-xs font-bold uppercase text-emerald-800">Kode Ujian Siswa (Bagikan ke Grup Kelas):</div>
+        <div id="display-kode-ujian" class="text-2xl font-mono font-extrabold text-blue-950 tracking-wider">SPENSA-0000</div>
+        <p class="text-xs text-emerald-900">✅ Aktif di Cloud! Siswa cukup memilih Kelas & Nama mereka lalu memasukkan kode ini.</p>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: ANALISA & CETAK ==================== -->
+    <section id="guru-analisa" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 no-print">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+          <div>
+            <h2 class="text-lg font-extrabold text-blue-950">5. Hasil Jawaban, Status Pengerjaan & Analisa Kemampuan</h2>
+            <p class="text-xs text-slate-500">Pantau siapa yang sudah/belum mengerjakan per kelas, nilai akhir, dan daya serap per soal.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="tarikDataHasilDariCloud()" class="text-xs bg-blue-900 hover:bg-blue-800 text-white font-bold px-3.5 py-2 rounded-xl">🔄 Refresh Data Cloud</button>
+            <button onclick="window.print()" class="text-xs bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2 rounded-xl">🖨️ Cetak Laporan PDF</button>
+            <button onclick="exportLaporanCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl">📥 CSV</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Filter Projek</label>
+            <select id="filter-laporan-projek" onchange="renderAnalisaDanLaporan()" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-semibold"></select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Filter Kelas</label>
+            <select id="filter-laporan-kelas" onchange="renderAnalisaDanLaporan()" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-semibold"></select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Filter Siswa (Detail Jawaban)</label>
+            <select id="filter-laporan-siswa" onchange="renderAnalisaDanLaporan()" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-semibold"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lembar Laporan Cetak -->
+      <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 print-container space-y-6">
+        <div class="flex items-center gap-4 border-b-2 border-slate-800 pb-4">
+          <img id="lap-logo-img" alt="Logo Laporan" class="w-14 h-14 object-contain shrink-0" />
+          <div>
+            <h3 class="text-base sm:text-lg font-extrabold uppercase text-slate-900">LAPORAN HASIL EVALUASI & ANALISA KEMAMPUAN SISWA</h3>
+            <p class="text-xs font-bold text-slate-700">SMP NEGERI 1 MERTOYUDAN</p>
+            <p id="subjudul-laporan-cetak" class="text-xs text-slate-500">Semua Projek — Semua Kelas</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div class="p-3.5 rounded-xl bg-blue-50 border border-blue-200">
+            <div class="text-[11px] font-bold text-blue-800">Sudah Mengerjakan</div>
+            <div id="lap-jml-peserta" class="text-xl font-extrabold text-blue-950">0</div>
+          </div>
+          <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+            <div class="text-[11px] font-bold text-amber-800">Rata-Rata Nilai</div>
+            <div id="lap-rata-nilai" class="text-xl font-extrabold text-amber-950">0</div>
+          </div>
+          <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200">
+            <div class="text-[11px] font-bold text-emerald-800">Nilai Tertinggi</div>
+            <div id="lap-max-nilai" class="text-xl font-extrabold text-emerald-950">0</div>
+          </div>
+          <div class="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200">
+            <div class="text-[11px] font-bold text-indigo-800">Tuntas (KKM ≥ 75)</div>
+            <div id="lap-tuntas" class="text-xl font-extrabold text-indigo-950">0%</div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-extrabold text-sm text-blue-950 mb-2">A. Daftar Nilai & Status Pengerjaan Siswa</h4>
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-bold">
+                <tr>
+                  <th class="p-2.5">No</th>
+                  <th class="p-2.5">Nama Lengkap Siswa</th>
+                  <th class="p-2.5">Kelas</th>
+                  <th class="p-2.5">Projek / Mapel</th>
+                  <th class="p-2.5">Benar / Salah</th>
+                  <th class="p-2.5">Nilai</th>
+                  <th class="p-2.5">Predikat Kemampuan</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-laporan-siswa" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="box-belum-mengerjakan" class="hidden bg-rose-50/70 border border-rose-200 rounded-xl p-4 space-y-2">
+          <h4 class="font-extrabold text-xs text-rose-900">⚠️ Daftar Siswa Kelas Ini yang Belum Mengerjakan</h4>
+          <div id="list-belum-mengerjakan" class="flex flex-wrap gap-2 text-xs"></div>
+        </div>
+
+        <div id="detail-lembar-siswa" class="hidden border border-blue-200 rounded-xl p-4 space-y-2 bg-blue-50/30">
+          <h4 class="font-extrabold text-xs text-blue-950">B. Lembar Analisis Jawaban Individu Siswa</h4>
+          <div id="konten-lembar-siswa" class="space-y-2 text-xs"></div>
+        </div>
+
+        <div>
+          <h4 class="font-extrabold text-sm text-blue-950 mb-2">C. Analisa Daya Serap & Penguasaan Materi per Butir Soal</h4>
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-bold">
+                <tr>
+                  <th class="p-2.5">No</th>
+                  <th class="p-2.5">Cuplikan Pertanyaan</th>
+                  <th class="p-2.5">Kunci</th>
+                  <th class="p-2.5">Menjawab Benar</th>
+                  <th class="p-2.5">Daya Serap</th>
+                  <th class="p-2.5">Kategori Kemampuan</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-analisa-butir" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== RUANG CBT SISWA ==================== -->
+  <section id="view-siswa" class="hidden max-w-3xl w-full mx-auto px-4 py-8 flex-1">
+    <div id="siswa-login-box" class="bg-white p-6 sm:p-8 rounded-2xl shadow-md border border-slate-200 space-y-5">
+      <div class="text-center space-y-2">
+        <img id="login-logo-img" alt="Logo CBT" class="w-16 h-16 mx-auto rounded-full border-2 border-amber-400 p-0.5 object-contain" />
+        <h2 class="text-xl font-extrabold text-blue-950">CBT SMP N 1 MERTOYUDAN</h2>
+        <p class="text-xs text-slate-500">Pilih Kelas & Nama Anda, lalu masukkan Kode Ujian.</p>
+      </div>
+
+      <div class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Kelas</label>
+          <select id="siswa-select-kelas" onchange="filterDropdownNamaSiswa()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold">
+            <option value="">-- Pilih Kelas --</option>
+          </select>
+        </div>
+
+        <div id="wrapper-select-nama">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Nama Lengkap Anda</label>
+          <select id="siswa-select-nama" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 font-semibold">
+            <option value="">-- Pilih Kelas Terlebih Dahulu --</option>
+          </select>
+        </div>
+
+        <div id="wrapper-manual-nama" class="hidden space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-200">
+          <p class="text-xs font-bold text-amber-900">Master data siswa belum diisi guru. Silakan ketik manual:</p>
+          <input type="text" id="siswa-nama-manual" placeholder="Nama Lengkap Anda" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm" />
+          <input type="text" id="siswa-kelas-manual" placeholder="Kelas (contoh: IX-A)" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Kode Ujian dari Guru</label>
+          <input type="text" id="siswa-input-kode" placeholder="Contoh: SPENSA-1234" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 font-mono uppercase font-bold" />
+        </div>
+
+        <button onclick="mulaiUjianCBT()" id="btn-mulai-cbt" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-extrabold py-3 rounded-xl text-sm shadow">
+          MASUK & KERJAKAN UJIAN 🚀
+        </button>
+      </div>
+    </div>
+
+    <div id="siswa-ujian-box" class="hidden space-y-5">
+      <div class="bg-blue-950 text-white p-4 rounded-2xl shadow flex flex-wrap justify-between items-center gap-3 sticky top-2 z-10 border-b-4 border-amber-400">
+        <div>
+          <span id="cbt-badge-projek" class="text-[10px] uppercase font-extrabold bg-amber-400 text-blue-950 px-2.5 py-0.5 rounded-full">UJIAN</span>
+          <h3 id="cbt-judul-mapel" class="font-extrabold text-sm sm:text-base mt-1">Mata Pelajaran</h3>
+          <p id="cbt-info-peserta" class="text-xs text-blue-200">Peserta: -</p>
+        </div>
+        <div class="text-right">
+          <div class="text-[10px] uppercase text-blue-200">Sisa Waktu</div>
+          <div id="cbt-timer" class="text-xl font-mono font-extrabold text-amber-400">60:00</div>
+        </div>
+      </div>
+
+      <div id="cbt-soal-list" class="space-y-4"></div>
+
+      <button onclick="selesaiUjianCBT(false)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-2xl text-sm shadow-lg">
+        ✅ Kumpulkan Jawaban
+      </button>
+    </div>
+
+    <div id="siswa-hasil-box" class="hidden bg-white p-8 rounded-2xl shadow-md border border-slate-200 text-center space-y-4">
+      <div class="text-4xl">🎉</div>
+      <h3 class="text-xl font-extrabold text-blue-950">Jawaban Berhasil Terkirim!</h3>
+      <p id="selesai-identitas" class="text-xs font-bold text-slate-600"></p>
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 max-w-xs mx-auto">
+        <div class="text-xs font-bold text-blue-800 uppercase">Nilai Akhir Anda</div>
+        <div id="selesai-skor" class="text-4xl font-extrabold text-blue-950 my-1">0</div>
+        <div id="selesai-rincian" class="text-xs text-slate-600"></div>
+      </div>
+      <p class="text-xs text-emerald-700 font-semibold">✅ Nilai dan rincian jawaban Anda sudah otomatis masuk ke sistem rekap guru.</p>
+      <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 py-2.5 rounded-xl text-xs">
+        Selesai & Keluar
+      </button>
+    </div>
+  </section>
+
+  <script>
+    // ==================== LOGO BAWAAN SPENSA-CBT (BIRU MUDA & EMAS) ====================
+    const DEFAULT_LOGO_SVG = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+        <defs>
+          <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#38bdf8"/>
+            <stop offset="100%" stop-color="#0284c7"/>
+          </linearGradient>
+        </defs>
+        <path d="M60 10 L102 26 L94 74 C90 94 75 105 60 112 C45 105 30 94 26 74 L18 26 Z" fill="url(#shieldGrad)" stroke="#fbbf24" stroke-width="4"/>
+        <!-- Stupa Magelang -->
+        <ellipse cx="60" cy="40" rx="14" ry="8" fill="#fef08a" stroke="#b45309" stroke-width="1.5"/>
+        <rect x="57" y="27" width="6" height="6" rx="1" fill="#fde047" stroke="#b45309" stroke-width="1.2"/>
+        <!-- Obor -->
+        <path d="M37 56 Q33 48 37 42 Q41 48 37 56 Z" fill="#f97316"/>
+        <rect x="35" y="56" width="4" height="10" rx="1" fill="#fef3c7"/>
+        <!-- Buku Terbuka -->
+        <path d="M40 76 Q50 72 60 76 Q70 72 80 76 L80 90 Q70 86 60 90 Q50 86 40 90 Z" fill="#ffffff" stroke="#1e3a8a" stroke-width="1.8"/>
+        <line x1="60" y1="76" x2="60" y2="90" stroke="#1e3a8a" stroke-width="1.5"/>
+      </svg>
+    `);
+
+    // ==================== STATE & KONFIGURASI ====================
+    let dbProjek = JSON.parse(localStorage.getItem('spensa_v5_projek') || '[]');
+    let activeProjekId = localStorage.getItem('spensa_v5_active_id') || '';
+    let dbHasilSiswa = JSON.parse(localStorage.getItem('spensa_v5_hasil') || '[]');
+    let dbMasterSiswa = JSON.parse(localStorage.getItem('spensa_v5_siswa') || '[]');
+    let supabaseClient = null;
+
+    let fileBase64Data = null;
+    let fileMimeType = null;
+    let timerInterval = null;
+    let paketUjianAktif = null;
+
+    window.onload = async () => {
+      const savedGemini = localStorage.getItem('spensa_gemini_key') || '';
+      const savedSbUrl = localStorage.getItem('spensa_sb_url') || '';
+      const savedSbKey = localStorage.getItem('spensa_sb_key') || '';
+      const savedLogo = localStorage.getItem('spensa_custom_logo') || DEFAULT_LOGO_SVG;
+
+      document.getElementById('cfg-gemini').value = savedGemini;
+      document.getElementById('cfg-sb-url').value = savedSbUrl;
+      document.getElementById('cfg-sb-key').value = savedSbKey;
+
+      terapkanLogoCustom(savedLogo);
+      initSupabase(savedSbUrl, savedSbKey);
+
+      if (dbProjek.length === 0) {
+        const defaultProj = {
+          id: 'PRJ-' + Date.now(),
+          kodeUjian: 'SPENSA-' + Math.floor(1000 + Math.random() * 9000),
+          namaProjek: 'ASAS Semester Ganjil',
+          mapel: 'Pendidikan Agama Islam & BP',
+          kelas: 'IX',
+          guru: 'Guru Mapel PAI',
+          waktu: 60,
+          generalisasiKisi: '',
+          contohSoalText: '',
+          soalCBT: []
+        };
+        dbProjek.push(defaultProj);
+        activeProjekId = defaultProj.id;
+        simpanDatabase();
+      }
+
+      if (supabaseClient) {
+        await tarikMasterSiswaDariCloud();
+        await tarikDataHasilDariCloud();
+      }
+
+      renderDropdownProjek();
+      muatDataProjekKeForm();
+      renderTabelMasterSiswa();
+      siapkanDropdownLoginSiswa();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const kodeUrl = urlParams.get('kode');
+      if (kodeUrl) {
+        switchRole('siswa');
+        document.getElementById('siswa-input-kode').value = kodeUrl.toUpperCase();
+      }
+    };
+
+    function initSupabase(url, key) {
+      const badge = document.getElementById('badge-cloud-status');
+      if (url && key && window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(url, key);
+          badge.innerText = '🟢 Cloud Terhubung';
+          badge.className = 'text-[10px] uppercase tracking-wider bg-emerald-900 border border-emerald-500 px-2.5 py-0.5 rounded-full text-emerald-200 font-bold';
+        } catch (e) {
+          supabaseClient = null;
+        }
+      } else {
+        supabaseClient = null;
+        badge.innerText = '⚪ Mode Lokal';
+        badge.className = 'text-[10px] uppercase tracking-wider bg-slate-800 border border-slate-600 px-2.5 py-0.5 rounded-full text-slate-300 font-bold';
+      }
+    }
+
+    async function simpanPengaturanCloud() {
+      const gKey = document.getElementById('cfg-gemini').value.trim();
+      const sbUrl = document.getElementById('cfg-sb-url').value.trim();
+      const sbKey = document.getElementById('cfg-sb-key').value.trim();
+      localStorage.setItem('spensa_gemini_key', gKey);
+      localStorage.setItem('spensa_sb_url', sbUrl);
+      localStorage.setItem('spensa_sb_key', sbKey);
+      initSupabase(sbUrl, sbKey);
+      if (supabaseClient) {
+        await tarikMasterSiswaDariCloud();
+        await tarikDataHasilDariCloud();
+      }
+      alert('Pengaturan API & Database Cloud berhasil disimpan!');
+    }
+
+    function uploadLogoSekolah(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        localStorage.setItem('spensa_custom_logo', e.target.result);
+        terapkanLogoCustom(e.target.result);
+        alert('Logo sekolah berhasil diperbarui!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function terapkanLogoCustom(dataUrl) {
+      ['header-logo', 'kop-logo-img', 'lap-logo-img', 'login-logo-img'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.src = dataUrl; el.style.display = 'block'; }
+      });
+    }
+
+    function getProjekAktif() {
+      return dbProjek.find(p => p.id === activeProjekId) || dbProjek[0];
+    }
+
+    function simpanDatabase() {
+      localStorage.setItem('spensa_v5_projek', JSON.stringify(dbProjek));
+      localStorage.setItem('spensa_v5_active_id', activeProjekId);
+      localStorage.setItem('spensa_v5_hasil', JSON.stringify(dbHasilSiswa));
+      localStorage.setItem('spensa_v5_siswa', JSON.stringify(dbMasterSiswa));
+    }
+
+    // ==================== MANAJEMEN PROJEK ====================
+    function renderDropdownProjek() {
+      const sel = document.getElementById('select-projek');
+      sel.innerHTML = dbProjek.map(p => `<option value="${p.id}" ${p.id === activeProjekId ? 'selected' : ''}>${p.namaProjek} — ${p.mapel} (Kelas ${p.kelas})</option>`).join('');
+    }
+
+    function buatProjekBaru() {
+      const nama = prompt('Masukkan Nama Projek Baru (misal: PTS IPA Kelas VIII):');
+      if (!nama) return;
+      const baru = {
+        id: 'PRJ-' + Date.now(),
+        kodeUjian: 'SPENSA-' + Math.floor(1000 + Math.random() * 9000),
+        namaProjek: nama.trim(),
+        mapel: 'Mata Pelajaran',
+        kelas: 'VIII',
+        guru: 'Nama Guru',
+        waktu: 60,
+        generalisasiKisi: '',
+        contohSoalText: '',
+        soalCBT: []
+      };
+      dbProjek.push(baru);
+      activeProjekId = baru.id;
+      simpanDatabase();
+      renderDropdownProjek();
+      muatDataProjekKeForm();
+    }
+
+    function gantiProjekAktif(id) {
+      activeProjekId = id;
+      simpanDatabase();
+      muatDataProjekKeForm();
+    }
+
+    function simpanMetaProjek() {
+      const p = getProjekAktif();
+      p.namaProjek = document.getElementById('meta-projek').value;
+      p.mapel = document.getElementById('meta-mapel').value;
+      p.kelas = document.getElementById('meta-kelas').value;
+      p.guru = document.getElementById('meta-guru').value;
+      p.waktu = parseInt(document.getElementById('meta-waktu').value) || 60;
+      simpanDatabase();
+      renderDropdownProjek();
+    }
+
+    function muatDataProjekKeForm() {
+      const p = getProjekAktif();
+      document.getElementById('meta-projek').value = p.namaProjek;
+      document.getElementById('meta-mapel').value = p.mapel;
+      document.getElementById('meta-kelas').value = p.kelas;
+      document.getElementById('meta-guru').value = p.guru;
+      document.getElementById('meta-waktu').value = p.waktu || 60;
+      document.getElementById('badge-kode-ujian').innerText = p.kodeUjian;
+
+      const boxGen = document.getElementById('hasil-generalisasi-box');
+      if (p.generalisasiKisi) {
+        boxGen.innerHTML = `
+          <div class="space-y-3">
+            <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-200"><b class="text-blue-900">Ringkasan Kisi-Kisi:</b><br>${p.generalisasiKisi.replace(/\n/g, '<br>')}</div>
+            <div class="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200"><b class="text-emerald-900">Contoh Soal & Kunci Sesuai Kisi-Kisi:</b><br>${p.contohSoalText.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      } else {
+        boxGen.innerHTML = '<p class="text-slate-400 italic">Belum ada kisi-kisi yang diproses pada projek ini.</p>';
+      }
+
+      renderSoalCBT();
+      updateInfoKirim();
+      renderAnalisaDanLaporan();
+    }
+
+    // ==================== NAVIGASI TAB ====================
+    function switchRole(role) {
+      document.getElementById('view-guru').classList.toggle('hidden', role !== 'guru');
+      document.getElementById('view-siswa').classList.toggle('hidden', role !== 'siswa');
+      document.getElementById('btn-role-guru').className = role === 'guru'
+        ? 'px-5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-amber-400 text-blue-950 shadow transition'
+        : 'px-5 py-2 rounded-lg text-xs sm:text-sm font-bold text-blue-200 hover:text-white transition';
+      document.getElementById('btn-role-siswa').className = role === 'siswa'
+        ? 'px-5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-amber-400 text-blue-950 shadow transition'
+        : 'px-5 py-2 rounded-lg text-xs sm:text-sm font-bold text-blue-200 hover:text-white transition';
+      if (role === 'siswa') siapkanDropdownLoginSiswa();
+    }
+
+    function switchGuruTab(tab) {
+      ['kisi', 'cbt', 'siswa', 'kirim', 'analisa'].forEach(t => {
+        document.getElementById('guru-' + t).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById('tab-' + t);
+        btn.className = t === tab
+          ? 'px-3 py-3 rounded-xl text-xs font-bold bg-blue-900 text-white shadow-sm text-left flex items-center gap-2'
+          : 'px-3 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 text-left flex items-center gap-2';
+      });
+      if (tab === 'cbt') renderSoalCBT();
+      if (tab === 'siswa') renderTabelMasterSiswa();
+      if (tab === 'kirim') updateInfoKirim();
+      if (tab === 'analisa') renderAnalisaDanLaporan();
+    }
+
+    // ==================== MASTER DATA SISWA ====================
+    function downloadTemplateCSV() {
+      const csv = 'NIS,Nama Lengkap,Kelas\n10241,Adinda Putri Maharani,IX-A\n10242,Bagas Pratama,IX-A\n10243,Citra Kusuma Dewi,IX-B\n';
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'Template_Data_Siswa_SMPN1_Mertoyudan.csv';
+      link.click();
+    }
+
+    function importFileCSVSiswa(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => { document.getElementById('input-bulk-siswa').value = e.target.result; };
+      reader.readAsText(file);
+    }
+
+    async function prosesImportBulkSiswa() {
+      const raw = document.getElementById('input-bulk-siswa').value.trim();
+      if (!raw) return alert('Paste data siswa dari Excel atau unggah file CSV terlebih dahulu!');
+
+      const baris = raw.split(/\r?\n/);
+      let tambahan = [];
+
+      baris.forEach(line => {
+        const cols = line.includes('\t') ? line.split('\t') : line.split(',');
+        if (cols.length >= 3) {
+          const nis = cols[0].trim();
+          const nama = cols[1].trim();
+          const kelas = cols[2].trim().toUpperCase();
+          if (nis && nama && kelas && nis.toLowerCase() !== 'nis') {
+            tambahan.push({ nis, nama, kelas });
+          }
+        }
+      });
+
+      if (tambahan.length === 0) return alert('Format data tidak terbaca. Pastikan urutan kolom: NIS, Nama Lengkap, Kelas.');
+
+      tambahan.forEach(item => {
+        const idx = dbMasterSiswa.findIndex(s => s.nis === item.nis);
+        if (idx >= 0) dbMasterSiswa[idx] = item;
+        else dbMasterSiswa.push(item);
+      });
+
+      simpanDatabase();
+      renderTabelMasterSiswa();
+      siapkanDropdownLoginSiswa();
+
+      if (supabaseClient) {
+        const payload = tambahan.map(s => ({ nis: s.nis, nama_siswa: s.nama, kelas: s.kelas }));
+        const { error } = await supabaseClient.from('data_siswa').upsert(payload);
+        if (error) alert('Tersimpan lokal, namun gagal sinkron ke Cloud: ' + error.message);
+        else alert(`Berhasil menyimpan ${tambahan.length} data siswa ke Cloud Supabase!`);
+      } else {
+        alert(`Berhasil menyimpan ${tambahan.length} data siswa di browser ini!`);
+      }
+      document.getElementById('input-bulk-siswa').value = '';
+    }
+
+    async function tarikMasterSiswaDariCloud() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from('data_siswa').select('*').order('kelas', { ascending: true });
+      if (!error && data) {
+        dbMasterSiswa = data.map(r => ({ nis: r.nis, nama: r.nama_siswa, kelas: r.kelas }));
+        simpanDatabase();
+      }
+    }
+
+    function renderTabelMasterSiswa() {
+      document.getElementById('count-master-siswa').innerText = dbMasterSiswa.length;
+      document.getElementById('total-siswa-terdaftar').innerText = dbMasterSiswa.length;
+      const tbody = document.getElementById('tbody-master-siswa');
+      if (dbMasterSiswa.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada data siswa.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = dbMasterSiswa.map((s, i) => `
+        <tr>
+          <td class="p-2.5 font-mono">${s.nis}</td>
+          <td class="p-2.5 font-semibold">${s.nama}</td>
+          <td class="p-2.5"><span class="bg-blue-50 text-blue-900 px-2 py-0.5 rounded font-bold">${s.kelas}</span></td>
+          <td class="p-2.5 text-right"><button onclick="hapusSatuSiswa(${i})" class="text-rose-600 font-bold hover:underline">Hapus</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function hapusSatuSiswa(idx) {
+      dbMasterSiswa.splice(idx, 1);
+      simpanDatabase();
+      renderTabelMasterSiswa();
+    }
+
+    function hapusSemuaMasterSiswa() {
+      if (confirm('Hapus seluruh master data siswa lokal?')) {
+        dbMasterSiswa = [];
+        simpanDatabase();
+        renderTabelMasterSiswa();
+      }
+    }
+
+    function muatContohSiswaSpensa() {
+      document.getElementById('input-bulk-siswa').value = "10241, Adinda Putri Maharani, IX-A\n10242, Bagas Pratama, IX-A\n10243, Dimas Saputra, IX-A\n10244, Citra Kusuma Dewi, IX-B\n10245, Faisal Ramadhan, IX-B";
+      prosesImportBulkSiswa();
+    }
+
+    // ==================== DROPDOWN LOGIN SISWA ====================
+    function siapkanDropdownLoginSiswa() {
+      const selKelas = document.getElementById('siswa-select-kelas');
+      const wrapSelect = document.getElementById('wrapper-select-nama');
+      const wrapManual = document.getElementById('wrapper-manual-nama');
+
+      if (dbMasterSiswa.length === 0) {
+        selKelas.parentElement.classList.add('hidden');
+        wrapSelect.classList.add('hidden');
+        wrapManual.classList.remove('hidden');
+        return;
+      }
+
+      selKelas.parentElement.classList.remove('hidden');
+      wrapSelect.classList.remove('hidden');
+      wrapManual.classList.add('hidden');
+
+      const daftarKelas = [...new Set(dbMasterSiswa.map(s => s.kelas))].sort();
+      selKelas.innerHTML = '<option value="">-- Pilih Kelas Anda --</option>' + daftarKelas.map(k => `<option value="${k}">Kelas ${k}</option>`).join('');
+      filterDropdownNamaSiswa();
+    }
+
+    function filterDropdownNamaSiswa() {
+      const kls = document.getElementById('siswa-select-kelas').value;
+      const selNama = document.getElementById('siswa-select-nama');
+      if (!kls) {
+        selNama.innerHTML = '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>';
+        return;
+      }
+      const siswaKelas = dbMasterSiswa.filter(s => s.kelas === kls).sort((a, b) => a.nama.localeCompare(b.nama));
+      selNama.innerHTML = '<option value="">-- Pilih Nama Lengkap --</option>' + siswaKelas.map(s => `<option value="${s.nama}">${s.nama} (NIS: ${s.nis})</option>`).join('');
+    }
+
+    // ==================== TAHAP 1: KISI-KISI PDF ====================
+    function handleFileKisi(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        fileBase64Data = e.target.result.split(',')[1];
+        fileMimeType = file.type || 'application/pdf';
+        document.getElementById('preview-file-badge').classList.remove('hidden');
+        document.getElementById('nama-file-terpilih').innerText = `📄 File siap dibaca: ${file.name}`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function hapusFileTerpilih() {
+      fileBase64Data = null;
+      fileMimeType = null;
+      document.getElementById('file-kisi').value = '';
+      document.getElementById('preview-file-badge').classList.add('hidden');
+    }
+
+    async function prosesGeneralisasiKisi() {
+      const apiKey = document.getElementById('cfg-gemini').value.trim();
+      if (!fileBase64Data) return alert('Unggah file PDF atau gambar kisi-kisi terlebih dahulu!');
+      if (!apiKey) return alert('Masukkan Gemini API Key pada menu Pengaturan di atas!');
+
+      const p = getProjekAktif();
+      const btn = document.getElementById('btn-gen-kisi');
+      const status = document.getElementById('status-kisi');
+      btn.disabled = true;
+      status.innerText = '⏳ Membaca dokumen PDF kisi-kisi & menyusun generalisasi + contoh soal...';
+
+      const prompt = `Analisis dokumen kisi-kisi terlampir untuk Projek: ${p.namaProjek}, Mapel: ${p.mapel}, Kelas: ${p.kelas}. Berikan output JSON murni tanpa markdown: { "generalisasi": "Ringkasan padat materi pokok, tujuan pembelajaran, dan sebaran indikator kisi-kisi.", "contoh_soal": "Buatkan 5 contoh soal Pilihan Ganda beserta kunci jawabannya sesuai kisi-kisi tersebut." }`;
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: fileMimeType, data: fileBase64Data } }] }] })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        let raw = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(raw);
+
+        p.generalisasiKisi = parsed.generalisasi;
+        p.contohSoalText = parsed.contoh_soal;
+        simpanDatabase();
+        muatDataProjekKeForm();
+        status.innerText = '✅ Kisi-kisi berhasil digeneralisasi!';
+      } catch (err) {
+        status.innerText = '❌ Gagal: ' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function downloadContohWord() {
+      const p = getProjekAktif();
+      if (!p.generalisasiKisi) return alert('Belum ada hasil generalisasi kisi-kisi!');
+      const html = `
+        <html><head><meta charset="utf-8"></head><body>
+        <h2>SMP NEGERI 1 MERTOYUDAN — GENERALISASI KISI-KISI & CONTOH SOAL</h2>
+        <p><b>Projek:</b> ${p.namaProjek} | <b>Mapel:</b> ${p.mapel} | <b>Kelas:</b> ${p.kelas} | <b>Guru:</b> ${p.guru}</p>
+        <h3>1. Generalisasi Kisi-Kisi</h3>
+        <p>${p.generalisasiKisi.replace(/\n/g, '<br>')}</p>
+        <h3>2. Contoh Soal & Kunci Jawaban</h3>
+        <p>${p.contohSoalText.replace(/\n/g, '<br>')}</p>
+        </body></html>
+      `;
+      unduhFileWord(html, `Contoh_Soal_${p.mapel}.doc`);
+    }
+
+    function cetakContohPDF() {
+      const p = getProjekAktif();
+      if (!p.generalisasiKisi) return alert('Belum ada hasil generalisasi kisi-kisi!');
+      const win = window.open('', '_blank');
+      win.document.write(`
+        <html><head><title>Generalisasi Kisi-Kisi</title><style>body{font-family:sans-serif;padding:24px;}</style></head><body>
+        <h2>SMP NEGERI 1 MERTOYUDAN — GENERALISASI KISI-KISI</h2>
+        <p><b>Projek:</b> ${p.namaProjek} | <b>Mapel:</b> ${p.mapel} | <b>Kelas:</b> ${p.kelas} | <b>Guru:</b> ${p.guru}</p>
+        <h3>Generalisasi Kisi-Kisi</h3>
+        <p>${p.generalisasiKisi.replace(/\n/g, '<br>')}</p>
+        <h3>Contoh Soal & Kunci</h3>
+        <p>${p.contohSoalText.replace(/\n/g, '<br>')}</p>
+        </body></html>
+      `);
+      win.document.close();
+      win.print();
+    }
+
+    // ==================== TAHAP 2: SOAL CBT PILIHAN GANDA ====================
+    async function generateSoalCBTPG() {
+      const apiKey = document.getElementById('cfg-gemini').value.trim();
+      const jumlah = parseInt(document.getElementById('jumlah-soal-pg').value) || 10;
+      const p = getProjekAktif();
+
+      if (!fileBase64Data && !p.generalisasiKisi) return alert('Unggah PDF kisi-kisi atau muat contoh projek di Tahap 1 terlebih dahulu!');
+      if (!apiKey) return alert('Masukkan Gemini API Key terlebih dahulu!');
+
+      const btn = document.getElementById('btn-gen-cbt');
+      const status = document.getElementById('status-cbt');
+      btn.disabled = true;
+      status.innerText = `⏳ Menyusun tepat ${jumlah} soal Pilihan Ganda sesuai kisi-kisi...`;
+
+      const prompt = `Buatkan tepat ${jumlah} butir soal Pilihan Ganda (opsi A, B, C, D) untuk SMP Negeri 1 Mertoyudan. Mapel: ${p.mapel}, Kelas: ${p.kelas}, Projek: ${p.namaProjek}. Acuan Kisi-Kisi: ${p.generalisasiKisi || 'Sesuai PDF kisi-kisi terlampir'}. Keluarkan HANYA JSON Array murni tanpa markdown: [{"pertanyaan": "...", "opsi": ["A. ...", "B. ...", "C. ...", "D. ..."], "kunci": "A"}]`;
+
+      const parts = [{ text: prompt }];
+      if (fileBase64Data) parts.push({ inline_data: { mime_type: fileMimeType, data: fileBase64Data } });
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        let raw = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/g, '').trim();
+        p.soalCBT = JSON.parse(raw);
+        simpanDatabase();
+        renderSoalCBT();
+        status.innerText = `✅ Berhasil membuat ${p.soalCBT.length} soal Pilihan Ganda!`;
+      } catch (err) {
+        status.innerText = '❌ Gagal: ' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderSoalCBT() {
+      const p = getProjekAktif();
+      document.getElementById('kop-nama-projek').innerText = (p.namaProjek || '').toUpperCase();
+      document.getElementById('kop-kunci-projek').innerText = (p.namaProjek || '').toUpperCase();
+      document.getElementById('kop-mapel').innerText = p.mapel;
+      document.getElementById('kop-guru').innerText = p.guru;
+      document.getElementById('kop-kelas').innerText = p.kelas;
+      document.getElementById('kop-waktu').innerText = p.waktu || 60;
+
+      const listEl = document.getElementById('list-soal-cbt');
+      const kunciGrid = document.getElementById('grid-kunci-print');
+      listEl.innerHTML = '';
+      kunciGrid.innerHTML = '';
+
+      if (!p.soalCBT || p.soalCBT.length === 0) {
+        listEl.innerHTML = '<p class="text-slate-400 italic">Belum ada soal Pilihan Ganda.</p>';
+        return;
+      }
+
+      p.soalCBT.forEach((s, idx) => {
+        listEl.innerHTML += `
+          <div class="border-b border-slate-200 pb-4 text-slate-800">
+            <div class="flex justify-between items-start gap-2">
+              <div class="flex gap-2 flex-1">
+                <span class="font-extrabold text-sm">${idx + 1}.</span>
+                <div contenteditable="true" onblur="editTanyaPG(${idx}, this.innerText)" class="text-sm font-medium flex-1 hover:bg-amber-50 p-1 rounded outline-none">${s.pertanyaan}</div>
+              </div>
+              <button onclick="hapusSoalPG(${idx})" class="no-print text-xs text-rose-600 font-bold hover:underline">Hapus</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-1.5 mt-2 pl-6 text-sm">
+              ${s.opsi.map((op, oIdx) => `<div contenteditable="true" onblur="editOpsiPG(${idx}, ${oIdx}, this.innerText)" class="hover:bg-blue-50 px-2 py-0.5 rounded outline-none">${op}</div>`).join('')}
+            </div>
+            <div class="no-print mt-2 pl-6 flex items-center gap-2 text-xs">
+              <span class="font-bold text-emerald-700">🔑 Kunci:</span>
+              <select onchange="editKunciPG(${idx}, this.value)" class="border border-emerald-400 bg-emerald-50 rounded px-2 py-0.5 font-extrabold text-emerald-900">
+                ${['A', 'B', 'C', 'D'].map(h => `<option value="${h}" ${s.kunci === h ? 'selected' : ''}>${h}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        `;
+        kunciGrid.innerHTML += `<div class="border border-slate-400 p-1.5 text-center font-bold">No. ${idx + 1} : ${s.kunci}</div>`;
+      });
+    }
+
+    function editTanyaPG(idx, val) { getProjekAktif().soalCBT[idx].pertanyaan = val.trim(); simpanDatabase(); }
+    function editOpsiPG(idx, oIdx, val) { getProjekAktif().soalCBT[idx].opsi[oIdx] = val.trim(); simpanDatabase(); }
+    function editKunciPG(idx, val) { getProjekAktif().soalCBT[idx].kunci = val; simpanDatabase(); renderSoalCBT(); }
+    function hapusSoalPG(idx) { getProjekAktif().soalCBT.splice(idx, 1); simpanDatabase(); renderSoalCBT(); }
+
+    function tambahSoalPGManual() {
+      getProjekAktif().soalCBT.push({
+        pertanyaan: "Tulis redaksi soal pilihan ganda di sini...",
+        opsi: ["A. Pilihan A", "B. Pilihan B", "C. Pilihan C", "D. Pilihan D"],
+        kunci: "A"
+      });
+      simpanDatabase();
+      renderSoalCBT();
+    }
+
+    function downloadNaskahWord(denganKunci) {
+      const p = getProjekAktif();
+      if (!p.soalCBT || p.soalCBT.length === 0) return alert('Belum ada soal!');
+      let soalHTML = p.soalCBT.map((s, i) => `<p style="margin-bottom:4px;"><b>${i + 1}.</b> ${s.pertanyaan}</p><p style="margin-left:18px;margin-top:0;">${s.opsi.join('<br>')}</p>`).join('');
+      let kunciHTML = denganKunci ? `<br style="page-break-before:always;"/><h3>KUNCI JAWABAN</h3><p>${p.soalCBT.map((s, i) => `No. ${i + 1}: ${s.kunci}`).join(' | ')}</p>` : '';
+      const doc = `
+        <html><head><meta charset="utf-8"></head><body>
+        <h2>SMP NEGERI 1 MERTOYUDAN — ${(p.namaProjek || '').toUpperCase()}</h2>
+        <p><b>Mapel:</b> ${p.mapel} | <b>Guru:</b> ${p.guru} | <b>Kelas:</b> ${p.kelas} | <b>Waktu:</b> ${p.waktu || 60} Menit</p>
+        <hr/>${soalHTML}${kunciHTML}
+        </body></html>
+      `;
+      unduhFileWord(doc, `Naskah_${p.namaProjek}_${p.mapel}.doc`);
+    }
+
+    function unduhFileWord(htmlString, filename) {
+      const blob = new Blob(['\ufeff', htmlString], { type: 'application/msword' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename.replace(/\s+/g, '_');
+      link.click();
+    }
+
+    function cetakNaskahPDF(denganKunci) {
+      if (!getProjekAktif().soalCBT || getProjekAktif().soalCBT.length === 0) return alert('Belum ada soal!');
+      document.getElementById('print-kunci-box').classList.toggle('hidden', !denganKunci);
+      setTimeout(() => window.print(), 200);
+    }
+
+    // ==================== PUBLIKASI CLOUD ====================
+    function updateInfoKirim() {
+      const p = getProjekAktif();
+      document.getElementById('info-kirim-projek').innerText = p.namaProjek;
+      document.getElementById('info-kirim-mapel').innerText = p.mapel;
+      document.getElementById('info-kirim-kelas').innerText = p.kelas;
+      document.getElementById('info-kirim-guru').innerText = p.guru;
+      document.getElementById('info-kirim-jumlah').innerText = (p.soalCBT || []).length;
+    }
+
+    async function publikasikanKeCloud() {
+      const p = getProjekAktif();
+      if (!p.soalCBT || p.soalCBT.length === 0) return alert('Buat soal Pilihan Ganda di Tahap 2 terlebih dahulu!');
+      if (!supabaseClient) return alert('Isi Supabase URL & Anon Key di menu Pengaturan (paling atas) terlebih dahulu!');
+
+      const btn = document.getElementById('btn-publish-cloud');
+      btn.disabled = true;
+      btn.innerText = '⏳ Menyimpan ke Cloud...';
+
+      try {
+        const { error } = await supabaseClient.from('paket_ujian').upsert({
+          kode_ujian: p.kodeUjian,
+          nama_projek: p.namaProjek,
+          mapel: p.mapel,
+          kelas: p.kelas,
+          guru: p.guru,
+          waktu: p.waktu || 60,
+          soal: p.soalCBT
+        });
+        if (error) throw error;
+
+        document.getElementById('box-kode-terbit').classList.remove('hidden');
+        document.getElementById('display-kode-ujian').innerText = p.kodeUjian;
+        alert(`Berhasil dipublikasikan! Bagikan Kode Ujian: ${p.kodeUjian} kepada siswa.`);
+      } catch (err) {
+        alert('Gagal publikasi ke Supabase: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '☁️ Publikasikan Ujian ke Cloud';
+      }
+    }
+
+    function salinKodeSingkat() {
+      const kode = getProjekAktif().kodeUjian;
+      navigator.clipboard.writeText(kode);
+      alert(`Kode Ujian "${kode}" berhasil disalin!`);
+    }
+
+    function salinLinkUjianCloud() {
+      const kode = getProjekAktif().kodeUjian;
+      const url = `${window.location.origin}${window.location.pathname}?kode=${kode}`;
+      navigator.clipboard.writeText(url);
+      alert('Link Ujian Otomatis berhasil disalin!');
+    }
+
+    // ==================== RUANG CBT SISWA ====================
+    async function mulaiUjianCBT() {
+      let nama = '';
+      let kelas = '';
+
+      if (dbMasterSiswa.length > 0) {
+        kelas = document.getElementById('siswa-select-kelas').value;
+        nama = document.getElementById('siswa-select-nama').value;
+        if (!kelas || !nama) return alert('Silakan pilih Kelas dan Nama Lengkap Anda dari daftar!');
+      } else {
+        nama = document.getElementById('siswa-nama-manual').value.trim();
+        kelas = document.getElementById('siswa-kelas-manual').value.trim().toUpperCase();
+        if (!nama || !kelas) return alert('Isi Nama Lengkap dan Kelas terlebih dahulu!');
+      }
+
+      const kode = document.getElementById('siswa-input-kode').value.trim().toUpperCase();
+      const btn = document.getElementById('btn-mulai-cbt');
+      btn.disabled = true;
+      btn.innerText = '⏳ Memeriksa & Memuat Soal...';
+
+      try {
+        if (supabaseClient && kode) {
+          const { data: cekSudah } = await supabaseClient.from('hasil_ujian').select('id').eq('kode_ujian', kode).eq('nama_siswa', nama).eq('kelas_siswa', kelas);
+          if (cekSudah && cekSudah.length > 0) {
+            throw new Error(`Siswa atas nama ${nama} (${kelas}) sudah tercatat mengerjakan ujian ini!`);
+          }
+
+          const { data, error } = await supabaseClient.from('paket_ujian').select('*').eq('kode_ujian', kode).single();
+          if (error || !data) throw new Error('Kode Ujian tidak ditemukan! Periksa kembali kode dari guru.');
+          paketUjianAktif = {
+            kodeUjian: data.kode_ujian,
+            namaProjek: data.nama_projek,
+            mapel: data.mapel,
+            kelas: data.kelas,
+            guru: data.guru,
+            waktu: data.waktu,
+            soal: data.soal
+          };
+        } else {
+          const p = getProjekAktif();
+          if (!p.soalCBT || p.soalCBT.length === 0) throw new Error('Soal belum tersedia.');
+          paketUjianAktif = {
+            kodeUjian: p.kodeUjian,
+            namaProjek: p.namaProjek,
+            mapel: p.mapel,
+            kelas: p.kelas,
+            guru: p.guru,
+            waktu: p.waktu,
+            soal: p.soalCBT
+          };
+        }
+
+        paketUjianAktif.pesertaNama = nama;
+        paketUjianAktif.pesertaKelas = kelas;
+
+        document.getElementById('siswa-login-box').classList.add('hidden');
+        document.getElementById('siswa-ujian-box').classList.remove('hidden');
+        document.getElementById('cbt-badge-projek').innerText = paketUjianAktif.namaProjek;
+        document.getElementById('cbt-judul-mapel').innerText = `${paketUjianAktif.mapel} — Guru: ${paketUjianAktif.guru}`;
+        document.getElementById('cbt-info-peserta').innerText = `Peserta: ${nama} (Kelas ${kelas})`;
+
+        mulaiTimerCBT(paketUjianAktif.waktu || 60);
+
+        document.getElementById('cbt-soal-list').innerHTML = paketUjianAktif.soal.map((s, idx) => `
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex gap-2.5 items-start">
+              <span class="bg-blue-900 text-white text-xs font-extrabold w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+              <p class="text-sm font-semibold text-slate-800">${s.pertanyaan}</p>
+            </div>
+            <div class="space-y-2 pl-8">
+              ${s.opsi.map(op => {
+                const huruf = op.trim().charAt(0).toUpperCase();
+                return `
+                  <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-blue-50 cursor-pointer text-sm">
+                    <input type="radio" name="ans_${idx}" value="${huruf}" class="w-4 h-4 accent-blue-900" />
+                    <span>${op}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'MASUK & KERJAKAN UJIAN 🚀';
+      }
+    }
+
+    function mulaiTimerCBT(menit) {
+      let detik = menit * 60;
+      const el = document.getElementById('cbt-timer');
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const m = Math.floor(detik / 60);
+        const s = detik % 60;
+        el.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        if (detik <= 0) {
+          clearInterval(timerInterval);
+          alert('Waktu habis! Jawaban otomatis dikumpulkan.');
+          selesaiUjianCBT(true);
+        }
+        detik--;
+      }, 1000);
+    }
+
+    async function selesaiUjianCBT(auto) {
+      if (!auto && !confirm('Yakin ingin mengumpulkan jawaban ujian sekarang?')) return;
+      clearInterval(timerInterval);
+
+      const nama = paketUjianAktif.pesertaNama;
+      const kelas = paketUjianAktif.pesertaKelas;
+      let benar = 0;
+      let detailJawaban = [];
+
+      paketUjianAktif.soal.forEach((s, idx) => {
+        const terpilih = document.querySelector(`input[name="ans_${idx}"]:checked`);
+        const jwb = terpilih ? terpilih.value : '-';
+        const isBenar = jwb === s.kunci.toUpperCase();
+        if (isBenar) benar++;
+        detailJawaban.push({
+          no: idx + 1,
+          pertanyaan: s.pertanyaan,
+          jawabanSiswa: jwb,
+          kunci: s.kunci,
+          status: isBenar ? 'Benar' : 'Salah'
+        });
+      });
+
+      const totalSoal = paketUjianAktif.soal.length;
+      const salah = totalSoal - benar;
+      const skor = totalSoal > 0 ? Math.round((benar / totalSoal) * 100) : 0;
+
+      const recordHasil = {
+        id: 'HSL-' + Date.now(),
+        kodeUjian: paketUjianAktif.kodeUjian,
+        namaProjek: paketUjianAktif.namaProjek,
+        mapel: paketUjianAktif.mapel,
+        namaSiswa: nama,
+        kelasSiswa: kelas,
+        benar,
+        salah,
+        skor,
+        detailJawaban
+      };
+
+      if (supabaseClient) {
+        await supabaseClient.from('hasil_ujian').insert({
+          kode_ujian: paketUjianAktif.kodeUjian,
+          nama_projek: paketUjianAktif.namaProjek,
+          mapel: paketUjianAktif.mapel,
+          nama_siswa: nama,
+          kelas_siswa: kelas,
+          benar,
+          salah,
+          skor,
+          detail_jawaban: detailJawaban
+        });
+      }
+
+      dbHasilSiswa.push(recordHasil);
+      simpanDatabase();
+
+      document.getElementById('siswa-ujian-box').classList.add('hidden');
+      document.getElementById('siswa-hasil-box').classList.remove('hidden');
+      document.getElementById('selesai-identitas').innerText = `${nama} — Kelas ${kelas} (${paketUjianAktif.namaProjek})`;
+      document.getElementById('selesai-skor').innerText = skor;
+      document.getElementById('selesai-rincian').innerText = `Benar ${benar} soal, Salah ${salah} soal dari ${totalSoal} soal`;
+    }
+
+    // ==================== ANALISA & STATUS BELUM MENGERJAKAN ====================
+    async function tarikDataHasilDariCloud() {
+      if (!supabaseClient) return alert('Database Cloud Supabase belum terhubung!');
+      const { data, error } = await supabaseClient.from('hasil_ujian').select('*').order('created_at', { ascending: false });
+      if (error) return alert('Gagal mengambil data: ' + error.message);
+
+      dbHasilSiswa = data.map(row => ({
+        id: row.id,
+        kodeUjian: row.kode_ujian,
+        namaProjek: row.nama_projek,
+        mapel: row.mapel,
+        namaSiswa: row.nama_siswa,
+        kelasSiswa: row.kelas_siswa,
+        benar: row.benar,
+        salah: row.salah,
+        skor: row.skor,
+        detailJawaban: row.detail_jawaban || []
+      }));
+      simpanDatabase();
+      renderAnalisaDanLaporan();
+    }
+
+    function renderAnalisaDanLaporan() {
+      const selProj = document.getElementById('filter-laporan-projek');
+      const currentProjFilter = selProj.value || 'ALL';
+      const daftarProjekUnik = [...new Set([...dbProjek.map(p => p.namaProjek), ...dbHasilSiswa.map(h => h.namaProjek)])];
+      selProj.innerHTML = '<option value="ALL">Semua Projek</option>' + daftarProjekUnik.map(np => `<option value="${np}" ${np === currentProjFilter ? 'selected' : ''}>${np}</option>`).join('');
+
+      let filtered = dbHasilSiswa;
+      if (selProj.value !== 'ALL') filtered = filtered.filter(h => h.namaProjek === selProj.value);
+
+      const selKelas = document.getElementById('filter-laporan-kelas');
+      const currentKelas = selKelas.value || 'ALL';
+      const daftarKelas = [...new Set([...dbMasterSiswa.map(s => s.kelas), ...filtered.map(h => h.kelasSiswa)])].sort();
+      selKelas.innerHTML = '<option value="ALL">Semua Kelas</option>' + daftarKelas.map(k => `<option value="${k}" ${k === currentKelas ? 'selected' : ''}>Kelas ${k}</option>`).join('');
+
+      if (selKelas.value !== 'ALL') filtered = filtered.filter(h => h.kelasSiswa === selKelas.value);
+
+      const selSiswa = document.getElementById('filter-laporan-siswa');
+      const currentSiswa = selSiswa.value || 'ALL';
+      selSiswa.innerHTML = '<option value="ALL">Semua Siswa</option>' + filtered.map(h => `<option value="${h.id}" ${h.id === currentSiswa ? 'selected' : ''}>${h.namaSiswa} (${h.kelasSiswa})</option>`).join('');
+
+      if (selSiswa.value !== 'ALL') filtered = filtered.filter(h => h.id === selSiswa.value);
+
+      const labelProj = selProj.value === 'ALL' ? 'Semua Projek' : selProj.value;
+      const labelKelas = selKelas.value === 'ALL' ? 'Semua Kelas' : `Kelas ${selKelas.value}`;
+      const labelSiswa = selSiswa.value === 'ALL' ? 'Semua Siswa' : (selSiswa.options[selSiswa.selectedIndex]?.text || 'Semua Siswa');
+      document.getElementById('subjudul-laporan-cetak').innerText = `${labelProj} | ${labelKelas} | ${labelSiswa}`;
+
+      const jml = filtered.length;
+      const rata = jml > 0 ? Math.round(filtered.reduce((acc, cur) => acc + cur.skor, 0) / jml) : 0;
+      const maxSkor = jml > 0 ? Math.max(...filtered.map(h => h.skor)) : 0;
+      const tuntas = jml > 0 ? Math.round((filtered.filter(h => h.skor >= 75).length / jml) * 100) : 0;
+
+      document.getElementById('lap-jml-peserta').innerText = jml;
+      document.getElementById('lap-rata-nilai').innerText = rata;
+      document.getElementById('lap-max-nilai').innerText = maxSkor;
+      document.getElementById('lap-tuntas').innerText = tuntas + '%';
+
+      const tbody = document.getElementById('tbody-laporan-siswa');
+      if (jml === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Belum ada data jawaban siswa pada filter ini.</td></tr>';
+      } else {
+        tbody.innerHTML = filtered.map((h, i) => {
+          const predikat = h.skor >= 90 ? 'Sangat Baik (Mahir)' : (h.skor >= 75 ? 'Baik (Tuntas)' : 'Perlu Bimbingan');
+          const badgeColor = h.skor >= 75 ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50';
+          return `
+            <tr>
+              <td class="p-2.5">${i + 1}</td>
+              <td class="p-2.5 font-bold">${h.namaSiswa}</td>
+              <td class="p-2.5">${h.kelasSiswa}</td>
+              <td class="p-2.5">${h.namaProjek} (${h.mapel})</td>
+              <td class="p-2.5">${h.benar} Benar / ${h.salah} Salah</td>
+              <td class="p-2.5 font-extrabold">${h.skor}</td>
+              <td class="p-2.5"><span class="px-2 py-0.5 rounded font-bold ${badgeColor}">${predikat}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const boxBelum = document.getElementById('box-belum-mengerjakan');
+      const listBelum = document.getElementById('list-belum-mengerjakan');
+      if (selKelas.value !== 'ALL' && dbMasterSiswa.length > 0) {
+        const siswaDiKelas = dbMasterSiswa.filter(s => s.kelas === selKelas.value);
+        const namaSudah = new Set(filtered.map(h => h.namaSiswa.toLowerCase()));
+        const belum = siswaDiKelas.filter(s => !namaSudah.has(s.nama.toLowerCase()));
+        if (belum.length > 0) {
+          boxBelum.classList.remove('hidden');
+          listBelum.innerHTML = belum.map(b => `<span class="bg-rose-100 text-rose-900 border border-rose-300 px-2.5 py-1 rounded-lg font-semibold">${b.nama} (${b.nis})</span>`).join('');
+        } else {
+          boxBelum.classList.add('hidden');
+        }
+      } else {
+        boxBelum.classList.add('hidden');
+      }
+
+      const boxDetail = document.getElementById('detail-lembar-siswa');
+      if (selSiswa.value !== 'ALL' && filtered.length === 1) {
+        boxDetail.classList.remove('hidden');
+        const siswaObj = filtered[0];
+        document.getElementById('konten-lembar-siswa').innerHTML = siswaObj.detailJawaban.map(d => `
+          <div class="p-2.5 rounded-lg border flex justify-between items-center ${d.status === 'Benar' ? 'bg-emerald-50/60 border-emerald-200' : 'bg-rose-50/60 border-rose-200'}">
+            <div><b>No. ${d.no}:</b> ${d.pertanyaan}</div>
+            <div class="shrink-0 ml-4 font-bold">Jawaban: ${d.jawabanSiswa} | Kunci: ${d.kunci} (${d.status})</div>
+          </div>
+        `).join('');
+      } else {
+        boxDetail.classList.add('hidden');
+      }
+
+      const tbodyButir = document.getElementById('tbody-analisa-butir');
+      if (jml === 0 || !filtered[0].detailJawaban || filtered[0].detailJawaban.length === 0) {
+        tbodyButir.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Analisa daya serap per butir soal akan tampil otomatis setelah ada siswa yang mengerjakan.</td></tr>';
+        return;
+      }
+
+      const jumlahButir = filtered[0].detailJawaban.length;
+      let rowsButir = '';
+      for (let i = 0; i < jumlahButir; i++) {
+        const sampelSoal = filtered[0].detailJawaban[i];
+        let jmlBenarButir = 0;
+        filtered.forEach(siswa => {
+          if (siswa.detailJawaban[i] && siswa.detailJawaban[i].status === 'Benar') jmlBenarButir++;
+        });
+        const dayaSerap = Math.round((jmlBenarButir / jml) * 100);
+        const ket = dayaSerap >= 75 ? 'Mudah / Dikuasai' : (dayaSerap >= 40 ? 'Sedang' : 'Sukar / Perlu Penguatan');
+        rowsButir += `
+          <tr>
+            <td class="p-2.5 font-bold">No. ${i + 1}</td>
+            <td class="p-2.5">${(sampelSoal.pertanyaan || '').substring(0, 75)}...</td>
+            <td class="p-2.5 font-extrabold">${sampelSoal.kunci}</td>
+            <td class="p-2.5">${jmlBenarButir} dari ${jml} siswa</td>
+            <td class="p-2.5 font-bold">${dayaSerap}%</td>
+            <td class="p-2.5 font-semibold">${ket}</td>
+          </tr>
+        `;
+      }
+      tbodyButir.innerHTML = rowsButir;
+    }
+
+    function exportLaporanCSV() {
+      if (dbHasilSiswa.length === 0) return alert('Belum ada data nilai untuk diunduh!');
+      let csv = 'No,Nama Siswa,Kelas,Projek,Mapel,Benar,Salah,Nilai\n';
+      dbHasilSiswa.forEach((h, i) => {
+        csv += `${i + 1},"${h.namaSiswa}","${h.kelasSiswa}","${h.namaProjek}","${h.mapel}",${h.benar},${h.salah},${h.skor}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'Laporan_Hasil_CBT_SMPN1_Mertoyudan.csv';
+      link.click();
+    }
+
+    function muatDemoProjek() {
+      const p = getProjekAktif();
+      p.namaProjek = 'ASAS PAI-BP Ganjil';
+      p.mapel = 'Pendidikan Agama Islam & BP';
+      p.kelas = 'IX';
+      p.guru = 'Tim MGMP PAI SMP N 1 Mertoyudan';
+      p.generalisasiKisi = "• Materi 1: Keutamaan menuntut ilmu (Q.S. Al-Mujadilah: 11, Q.S. Az-Zumar: 9) & tanda waqaf.\n• Materi 2: Iman kepada Hari Akhir, tanda kiamat kubra, dan urutan Yaumul Ba'ats hingga Yaumul Jaza.\n• Materi 3: Kasih sayang kepada sesama di lingkungan sekolah.\n• Materi 4: Ketentuan penyembelihan hewan, kurban, dan akikah.\n• Materi 5: Sejarah peradaban dan kejayaan Daulah Syafawi (Shah Abbas I).";
+      p.contohSoalText = "1. Makna Q.S. Al-Mujadilah: 11 adalah Allah mengangkat derajat orang beriman dan berilmu. (Kunci: B)\n2. Tanda waqaf Al-Waqfu Aula (قلى) berarti lebih utama berhenti. (Kunci: B)";
+      p.soalCBT = [
+        { pertanyaan: "Allah Swt. berjanji dalam Q.S. Al-Mujadilah ayat 11 akan mengangkat derajat orang-orang yang beriman dan diberi ilmu beberapa derajat. Makna utama janji tersebut adalah ....", opsi: ["A. Orang berilmu selalu kaya raya", "B. Kemuliaan manusia di sisi Allah ditentukan oleh iman dan ilmunya", "C. Ilmu hanya didapat di sekolah", "D. Jabatan duniawi adalah tujuan utama"], kunci: "B" },
+        { pertanyaan: "Arti tanda waqaf Al-Waqfu Aula (قلى) pada bacaan Al-Qur'an adalah ....", opsi: ["A. Dilarang berhenti", "B. Lebih utama berhenti daripada meneruskan bacaan", "C. Lebih utama terus", "D. Wajib berhenti tanpa napas"], kunci: "B" },
+        { pertanyaan: "Urutan peristiwa setelah kiamat kubra hingga menerima balasan adalah ....", opsi: ["A. Yaumul Ba'ats → Mahsyar → Hisab → Mizan → Jaza", "B. Mahsyar → Ba'ats → Mizan → Hisab → Jaza", "C. Ba'ats → Hisab → Mahsyar → Jaza → Mizan", "D. Hisab → Ba'ats → Mahsyar → Mizan → Jaza"], kunci: "A" },
+        { pertanyaan: "Waktu paling utama menyembelih hewan akikah menurut hadis Nabi saw. adalah ....", opsi: ["A. Hari ke-3 kelahiran", "B. Hari ke-7 kelahiran", "C. Tanggal 10 Zulhijah", "D. Hari ke-40 kelahiran"], kunci: "B" },
+        { pertanyaan: "Kota yang dijadikan pusat seni, arsitektur, dan ilmu pengetahuan pada puncak kejayaan Daulah Syafawi masa Shah Abbas I adalah ....", opsi: ["A. Baghdad", "B. Isfahan", "C. Cordoba", "D. Damaskus"], kunci: "B" }
+      ];
+      simpanDatabase();
+      muatDataProjekKeForm();
+    }
+  </script>
+</body>
+</html>
