@@ -927,7 +927,7 @@
       const prompt = `Analisis dokumen kisi-kisi terlampir untuk Projek: ${p.namaProjek}, Mapel: ${p.mapel}, Kelas: ${p.kelas}. Berikan output JSON murni tanpa markdown: { "generalisasi": "Ringkasan padat materi pokok, tujuan pembelajaran, dan sebaran indikator kisi-kisi.", "contoh_soal": "Buatkan 5 contoh soal Pilihan Ganda beserta kunci jawabannya sesuai kisi-kisi tersebut." }`;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: fileMimeType, data: fileBase64Data } }] }] })
@@ -1004,7 +1004,7 @@
       if (fileBase64Data) parts.push({ inline_data: { mime_type: fileMimeType, data: fileBase64Data } });
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts }] })
